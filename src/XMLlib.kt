@@ -1,8 +1,7 @@
-//blindar input de strings para tags, atributos
 //documentação
-//atenção à duplicação de atributos
 //texto pode ter atributos
 //blindar ou ter texto ou ter tag
+
 
 // Classe para representar o documento XML
 class XMLDocument {
@@ -11,71 +10,86 @@ class XMLDocument {
         return rootElement.prettyPrint()
     }
 
-// Classe para representar um elemento XML
-class XMLElement(var name: String) {
-    val attributes = mutableMapOf<String, String>()
-    val children = mutableListOf<XMLElement>()
-    val texto: String? = null
+    // Classe para representar um elemento XML
+    class XMLElement(var name: String) {
+        val attributes = mutableMapOf<String, String>()
+        val children = mutableListOf<XMLElement>()
+        val texto: String? = null
 
 
-
-    fun addChild(child: XMLElement) {
-        children.add(child)
-    }
-
-    fun removeChild(child: XMLElement) {
-        children.remove(child)
-    }
-
-    fun addAttribute(name: String, value: String) {
-        attributes[name] = value
-    }
-
-    fun removeAttribute(name: String) {
-        attributes.remove(name)
-    }
-
-    fun prettyPrint(indentation: String = ""): String {
-        val sb = StringBuilder()
-        sb.append("$indentation<$name")
-        for ((attr, value) in attributes) {
-            sb.append(" $attr=\"$value\"")
-        }
-        if (children.isEmpty() && texto.isNullOrEmpty()) {
-            sb.append("/>")
-        } else {
-            sb.append(">\n")
-            for (child in children) {
-                sb.append(child.prettyPrint("$indentation  "))
+        fun addChild(xmlelement: XMLElement) {
+            if (children.contains(xmlelement)) {
+                throw IllegalArgumentException("Elemento já existe")
+            } else {
+                children.add(xmlelement)
             }
-            texto?.let { sb.append("$indentation  $it\n") }
-            sb.append("$indentation</$name>")
         }
-        sb.append("\n")
-        return sb.toString()
+
+        fun removeChild(child: XMLElement) {
+            children.remove(child)
+        }
+
+        fun addAttribute(name: String, value: String) {
+            val sanitizedKey = sanitize(name)
+            val sanitizedValue = sanitize(value)
+
+            if (sanitizedKey.isEmpty()) {
+                throw IllegalArgumentException("O nome do atributo não pode estar vazio ou conter caracteres inválidos")
+            }
+            if (attributes.containsKey(sanitizedKey)) {
+                throw IllegalArgumentException("Atributo já existe")
+            } else {
+                attributes[sanitizedKey] = sanitizedValue
+            }
+        }
+
+        private fun sanitize(input: String): String { //remover caracteres especiais
+            return input.replace(Regex("[<>&\"']"), "")
+        }
+
+        fun removeAttribute(name: String) {
+            attributes.remove(name)
+        }
+
+        fun prettyPrint(indentation: String = ""): String {
+            val sb = StringBuilder()
+            sb.append("$indentation<$name")
+            for ((attr, value) in attributes) {
+                sb.append(" $attr=\"$value\"")
+            }
+            if (children.isEmpty() && texto.isNullOrEmpty()) {
+                sb.append("/>")
+            } else {
+                sb.append(">\n")
+                for (child in children) {
+                    sb.append(child.prettyPrint("$indentation  "))
+                }
+                texto?.let { sb.append("$indentation  $it\n") }
+                sb.append("$indentation</$name>")
+            }
+            sb.append("\n")
+            return sb.toString()
+        }
+
+        fun accept(visitor: Visitor) {
+            visitor.visit(this)
+            for (child in children) {
+                child.accept(visitor)
+            }
+        }
     }
 
-    fun accept(visitor: Visitor) {
-        visitor.visit(this)
-        for (child in children) {
-            child.accept(visitor)
-        }
+    // Interface para o Visitor
+    interface Visitor {
+        fun visit(element: XMLElement)
     }
-}
-
-// Interface para o Visitor
-interface Visitor {
-    fun visit(element: XMLElement)
-}
 
 
     // Adiciona atributos globalmente ao documento
-    fun addGlobalAttribute(entity: XMLElement, attributeName: String, value: String) {
+    fun addGlobalAttribute(attributeName: String, value: String) {
         rootElement.accept(object : Visitor {
             override fun visit(element: XMLElement) {
-                if (element.name == entity.name) {
-                    element.addAttribute(attributeName, value)
-                }
+                element.addAttribute(attributeName, value)
             }
         })
     }
@@ -126,7 +140,6 @@ interface Visitor {
             }
         })
     }
-
 
 
     // Micro-XPath

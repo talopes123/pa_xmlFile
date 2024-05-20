@@ -1,18 +1,25 @@
 import org.junit.Test
 import XMLDocument.XMLElement
 import org.junit.Assert.*
+import org.junit.Before
 
 class XMLlibDocumentTest {
 
+    private lateinit var xmlDocument: XMLDocument
+
+    @Before
+    fun setUp() {
+        xmlDocument = XMLDocument()
+    }
+
+
     @Test
     fun testCreateXmlDocument() {
-        val xmlDocument = XMLDocument()
         assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", XMLDocument.createXmlHeader())
     }
 
     @Test
     fun testAddChild() {
-        val xmlDocument = XMLDocument()
         val parentElement = xmlDocument.rootElement
         val childElement = XMLElement("child")
         parentElement.addChild(childElement)
@@ -71,26 +78,25 @@ class XMLlibDocumentTest {
 
     @Test
     fun testAddGlobalAttribute() {
-        val xmlDocument = XMLDocument()
         val child1 = XMLElement("child1")
         val child2 = XMLElement("child2")
+        val child3 = XMLElement("child3")
+        child2.addChild(child3)
         xmlDocument.rootElement.addChild(child1)
         xmlDocument.rootElement.addChild(child2)
-        child2.addChild(child1)
+
 
         val attributeName = "attr"
         val attributeValue = "value"
-        xmlDocument.addGlobalAttribute(child1, attributeName, attributeValue)
-
-        val foundChild1 = child2.children.find { it.name == child1.name }
+        xmlDocument.addGlobalAttribute(attributeName, attributeValue)
 
         assertEquals(attributeValue, child1.attributes[attributeName])
-        assertEquals(attributeValue, foundChild1?.attributes?.get(attributeName))
+        assertEquals(attributeValue, child2.attributes[attributeName])
+        assertEquals(attributeValue, child3.attributes[attributeName])
     }
 
     @Test
     fun testRenameGlobalEntity() {
-        val xmlDocument = XMLDocument()
         val oldEntityName = "oldName"
         val newEntityName = "newName"
 
@@ -103,8 +109,6 @@ class XMLlibDocumentTest {
 
     @Test
     fun testRenameGlobalAttribute() {
-        // Criar um documento XML
-        val xmlDocument = XMLDocument()
 
         // Adicionar um elemento com um atributo ao documento
         val entityName = "entity"
@@ -125,8 +129,6 @@ class XMLlibDocumentTest {
 
     @Test
     fun testRemoveGlobalEntity() {
-        // Criar um documento XML
-        val xmlDocument = XMLDocument()
 
         // Adicionar múltiplos elementos com o mesmo nome ao documento
         val entityName = "entity"
@@ -145,8 +147,6 @@ class XMLlibDocumentTest {
 
     @Test
     fun testRemoveGlobalAttribute() {
-        // Criar um documento XML
-        val xmlDocument = XMLDocument()
 
         // Adicionar múltiplos elementos com o mesmo nome e atributo ao documento
         val entityName = "entity"
@@ -170,8 +170,7 @@ class XMLlibDocumentTest {
 
     @Test
     fun testQueryXPath() {
-        // Criar um documento XML
-        val xmlDocument = XMLDocument()
+
 
         // Construir uma estrutura XML específica
         val root = xmlDocument.rootElement
