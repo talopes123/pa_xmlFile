@@ -2,7 +2,7 @@ import org.junit.Test
 import XMLDocument.XMLElement
 import org.junit.Assert.*
 
-class XMLDocumentTest {
+class XMLlibDocumentTest {
 
     @Test
     fun testCreateXmlDocument() {
