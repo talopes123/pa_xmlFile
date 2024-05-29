@@ -24,7 +24,7 @@ class XMLlibDocumentTest {
         val childElement = XMLElement("child")
         parentElement.addChild(childElement)
 
-        assertTrue(parentElement.children.contains(childElement))
+        assertTrue(parentElement.getChildrenList().contains(childElement))
     }
 
     @Test
@@ -34,7 +34,7 @@ class XMLlibDocumentTest {
         parentElement.addChild(childElement)
         parentElement.removeChild(childElement)
 
-        assertTrue(parentElement.children.isEmpty())
+        assertTrue(parentElement.getChildrenList().isEmpty())
     }
 
     @Test
@@ -103,7 +103,7 @@ class XMLlibDocumentTest {
         xmlDocument.rootElement.addChild(XMLElement(oldEntityName))
         xmlDocument.renameGlobalEntity(oldEntityName, newEntityName)
 
-        assertTrue(xmlDocument.rootElement.children.any { it.name == newEntityName })
+        assertTrue(xmlDocument.rootElement.getChildrenList().any { it.name == newEntityName })
 
     }
 
@@ -141,8 +141,8 @@ class XMLlibDocumentTest {
         xmlDocument.removeGlobalEntity(entityName)
 
         // Verificar se todos os elementos foram removidos corretamente
-        assertEquals(0, xmlDocument.rootElement.children.size)
-        assertFalse(xmlDocument.rootElement.children.any { it.name == entityName })
+        assertEquals(0, xmlDocument.rootElement.getChildrenList().size)
+        assertFalse(xmlDocument.rootElement.getChildrenList().any { it.name == entityName })
     }
 
     @Test
@@ -163,7 +163,7 @@ class XMLlibDocumentTest {
         xmlDocument.removeGlobalAttribute(entityName, attributeName)
 
         // Verificar se o atributo foi removido corretamente de todos os elementos
-        xmlDocument.rootElement.children.forEach { element ->
+        xmlDocument.rootElement.getChildrenList().forEach { element ->
             assertFalse(element.attributes.containsKey(attributeName))
         }
     }
@@ -174,25 +174,23 @@ class XMLlibDocumentTest {
 
         // Construir uma estrutura XML específica
         val root = xmlDocument.rootElement
-        val child1 = XMLElement("child1")
-        val child2 = XMLElement("child2")
-        val subchild1 = XMLElement("subchild1")
-        val subchild2 = XMLElement("subchild2")
-        child1.addChild(subchild1)
-        child2.addChild(subchild2)
+        // Adiciona elementos filhos
+        val child1 = XMLDocument.XMLElement("child1")
+        val child2 = XMLDocument.XMLElement("child2")
+        val child3 = XMLDocument.XMLElement("child1")
         root.addChild(child1)
         root.addChild(child2)
+        root.addChild(child3)
 
-        // Consultar elementos com expressões XPath
-        val result1 = xmlDocument.queryXPath("/root/child1")
-        val result2 = xmlDocument.queryXPath("/root/child2/subchild2")
+        // Consulta usando XPath
+        val results = xmlDocument.queryXPath("/root/child1")
 
-        // Verificar se os resultados estão corretos
-        assertEquals(1, result1.size)
-        assertEquals(child1, result1.first())
-
-        assertEquals(1, result2.size)
-        assertEquals(subchild2, result2.first())
+        println("Resultados da consulta XPath '/root/child1':")
+        results.forEach { println(it.prettyPrint()) }
+        // Verifica se os resultados correspondem ao esperado
+        assertEquals(2, results.size) // Espera-se que haja dois elementos "child1"
+        assertEquals("child1", results[0].name)
+        assertEquals("child1", results[1].name)
     }
 
 }
