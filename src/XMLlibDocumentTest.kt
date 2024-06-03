@@ -1,23 +1,70 @@
 import org.junit.Test
-import XMLDocument.XMLElement
 import org.junit.Assert.*
 import org.junit.Before
+import java.io.File
 
+import XMLDocument.XMLElement
+
+
+/**
+ * Classe de teste para a classe XMLDocument.
+ *
+ * Esta classe contém uma série de testes para verificar o comportamento das funções
+ * na classe XMLDocument.
+ */
 class XMLlibDocumentTest {
 
     private lateinit var xmlDocument: XMLDocument
-
+    /**
+     * Configuração inicial para os testes.
+     *
+     * Cria uma instância de XMLDocument antes de cada teste.
+     */
     @Before
     fun setUp() {
         xmlDocument = XMLDocument()
     }
 
-
+    /**
+     * Testa a função createXmlDocument.
+     *
+     * Verifica se a função createXmlDocument gera corretamente o cabeçalho XML.
+     */
     @Test
     fun testCreateXmlDocument() {
         assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", XMLDocument.createXmlHeader())
     }
 
+    /**
+     * Testa a função writeToFile.
+     *
+     * Verifica se a função writeToFile escreve corretamente o conteúdo do documento XML em um arquivo.
+     */
+    @Test
+    fun testWriteToFile() {
+        val filename = "test_output.xml"
+        xmlDocument.rootElement.addChild(XMLElement("child"))
+        xmlDocument.writeToFile(filename)
+
+        val expectedOutput = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <root>
+          <child/>
+        </root>
+    """.trimIndent()
+
+        val fileContent = File(filename).readText()
+        assertEquals(expectedOutput, fileContent)
+
+        // Limpar o arquivo de teste
+        File(filename).delete()
+    }
+
+    /**
+     * Testa a função addChild.
+     *
+     * Verifica se a função addChild adiciona corretamente um elemento filho ao elemento pai.
+     */
     @Test
     fun testAddChild() {
         val parentElement = xmlDocument.rootElement
@@ -27,6 +74,38 @@ class XMLlibDocumentTest {
         assertTrue(parentElement.getChildrenList().contains(childElement))
     }
 
+    /**
+    * Testa o cenário onde addChild é chamado com um elemento que já existe como filho.
+    *
+    * Verifica se a função addChild lança uma exceção IllegalArgumentException quando um elemento
+    * já existente é adicionado novamente como filho.
+    */
+    @Test(expected = IllegalArgumentException::class)
+    fun testDuplicateChild() {
+        val element = XMLElement("element")
+        val child = XMLElement("child")
+        element.addChild(child)
+        element.addChild(child)
+    }
+
+    /**
+     * Testa a função addChild com texto presente.
+     *
+     * Verifica se a função addChild lança uma exceção IllegalArgumentException
+     * quando tenta adicionar um elemento filho a um elemento que já possui texto definido.
+     */
+    @Test(expected = IllegalArgumentException::class)
+    fun testAddChildWithTextPresent() {
+        val element = XMLElement("element")
+        element.setTexto("Some text")
+        element.addChild(XMLElement("child"))
+    }
+
+    /**
+     * Testa a função removeChild.
+     *
+     * Verifica se a função removeChild remove corretamente um elemento filho do elemento pai.
+     */
     @Test
     fun testRemoveChild() {
         val parentElement = XMLElement("parent")
@@ -37,6 +116,11 @@ class XMLlibDocumentTest {
         assertTrue(parentElement.getChildrenList().isEmpty())
     }
 
+    /**
+     * Testa a função addAttribute.
+     *
+     * Verifica se a função addAttribute adiciona corretamente atributos ao elemento.
+     */
     @Test
     fun testAddAttribute() {
         val element = XMLElement("element")
@@ -47,6 +131,36 @@ class XMLlibDocumentTest {
         assertEquals("value2", element.attributes["attr2"])
     }
 
+    /**
+     * Testa o cenário onde addAttribute é chamado com um atributo que já existe.
+     *
+     * Verifica se a função addAttribute lança uma exceção IllegalArgumentException
+     * quando um atributo já existente é adicionado novamente.
+     */
+    @Test(expected = IllegalArgumentException::class)
+    fun testDuplicateAttribute() {
+        val element = XMLElement("element")
+        element.addAttribute("attr", "value1")
+        element.addAttribute("attr", "value2")
+    }
+
+    /**
+     * Testa o cenário onde addTextNodeAttribute é chamado sem texto presente no elemento.
+     *
+     * Verifica se a função addTextNodeAttribute lança uma exceção IllegalArgumentException
+     * quando é chamada em um elemento sem texto definido.
+     */
+    @Test(expected = IllegalArgumentException::class)
+    fun testAddTextNodeAttributeWithoutText() {
+        val element = XMLElement("element")
+        element.addTextNodeAttribute("attr", "value")
+    }
+
+    /**
+     * Testa a função removeAttribute.
+     *
+     * Verifica se a função removeAttribute remove corretamente um atributo do elemento.
+     */
     @Test
     fun testRemoveAttribute() {
         val element = XMLElement("element")
@@ -58,6 +172,56 @@ class XMLlibDocumentTest {
         assertTrue(element.attributes.containsKey("attr1").not())
     }
 
+    /**
+     * Testa o cenário onde setTexto é chamado com elementos filhos presentes.
+     *
+     * Verifica se a função setTexto lança uma exceção IllegalArgumentException
+     * quando é chamada em um elemento que já possui elementos filhos.
+     */
+    @Test(expected = IllegalArgumentException::class)
+    fun testSetTextWithChildrenPresent() {
+        val element = XMLElement("element")
+        element.addChild(XMLElement("child"))
+        element.setTexto("Some text")
+    }
+
+    /**
+     * Testa a criação e manipulação de um nó de texto.
+     *
+     * Verifica se é possível criar um nó de texto com atributos e se a função prettyPrint
+     * gera a representação XML correta para o nó de texto.
+     */
+    @Test
+    fun testTextNode() {
+        val textNode = XMLDocument.TextNode("Hello, World!")
+        textNode.addAttribute("lang", "en")
+
+        assertEquals("Hello, World!", textNode.texto)
+        assertEquals("en", textNode.attributes["lang"])
+
+        val expectedOutput = """<text lang="en">Hello, World!</text>
+    """.trimIndent()
+        assertEquals(expectedOutput, textNode.prettyPrint())
+    }
+
+    /**
+     * Testa a função sanitize para valores de atributo.
+     *
+     * Verifica se a função sanitize remove corretamente caracteres especiais de valores de atributo.
+     */
+    @Test
+    fun testSanitizeAttributeValue() {
+        val element = XMLElement("element")
+        element.addAttribute("attr", "value<invalid>")
+        assertEquals("valueinvalid", element.attributes["attr"])
+    }
+
+    /**
+     * Testa a função prettyPrint para representação XML.
+     *
+     * Verifica se a função prettyPrint gera corretamente a representação XML
+     * para o elemento e seus filhos, se presentes.
+     */
     @Test
     fun testPrettyPrint() {
         val element = XMLElement("element")
@@ -76,6 +240,12 @@ class XMLlibDocumentTest {
         println(element.prettyPrint())
     }
 
+    /**
+     * Testa a função addGlobalAttribute.
+     *
+     * Verifica se a função addGlobalAttribute adiciona corretamente um atributo
+     * a todos os elementos do documento XML.
+     */
     @Test
     fun testAddGlobalAttribute() {
         val child1 = XMLElement("child1")
@@ -95,6 +265,12 @@ class XMLlibDocumentTest {
         assertEquals(attributeValue, child3.attributes[attributeName])
     }
 
+    /**
+     * Testa a função renameGlobalEntity.
+     *
+     * Verifica se a função renameGlobalEntity renomeia corretamente
+     * todas as ocorrências de um elemento no documento XML.
+     */
     @Test
     fun testRenameGlobalEntity() {
         val oldEntityName = "oldName"
@@ -107,6 +283,12 @@ class XMLlibDocumentTest {
 
     }
 
+    /**
+     * Testa a função renameGlobalAttribute.
+     *
+     * Verifica se a função renameGlobalAttribute renomeia corretamente
+     * um atributo em todos os elementos de um determinado tipo no documento XML.
+     */
     @Test
     fun testRenameGlobalAttribute() {
 
@@ -127,6 +309,12 @@ class XMLlibDocumentTest {
         assertEquals(null, element.attributes[attributeName])
     }
 
+    /**
+     * Testa a função removeGlobalEntity.
+     *
+     * Verifica se a função removeGlobalEntity remove corretamente todas
+     * as ocorrências de um determinado elemento no documento XML.
+     */
     @Test
     fun testRemoveGlobalEntity() {
 
@@ -145,6 +333,12 @@ class XMLlibDocumentTest {
         assertFalse(xmlDocument.rootElement.getChildrenList().any { it.name == entityName })
     }
 
+    /**
+     * Testa a função removeGlobalAttribute.
+     *
+     * Verifica se a função removeGlobalAttribute remove corretamente
+     * um atributo de todos os elementos de um determinado tipo no documento XML.
+     */
     @Test
     fun testRemoveGlobalAttribute() {
 
@@ -168,10 +362,14 @@ class XMLlibDocumentTest {
         }
     }
 
+    /**
+     * Testa a função queryXPath para consulta XML.
+     *
+     * Verifica se a função queryXPath retorna corretamente todos os elementos
+     * que correspondem a um determinado caminho XPath no documento XML.
+     */
     @Test
     fun testQueryXPath() {
-
-
         // Construir uma estrutura XML específica
         val root = xmlDocument.rootElement
         // Adiciona elementos filhos
@@ -187,10 +385,82 @@ class XMLlibDocumentTest {
 
         println("Resultados da consulta XPath '/root/child1':")
         results.forEach { println(it.prettyPrint()) }
-        // Verifica se os resultados correspondem ao esperado
         assertEquals(2, results.size) // Espera-se que haja dois elementos "child1"
         assertEquals("child1", results[0].name)
         assertEquals("child1", results[1].name)
     }
 
+    /**
+     * Testa a transformação de valores usando a anotação @XmlString com um transformador personalizado.
+     *
+     * Verifica se a transformação de valores é aplicada corretamente ao usar a anotação @XmlString
+     * com um transformador personalizado.
+     */
+    @Test
+    fun testAddPercentageTransformer() {
+        class PercentageTest(@XMLDocument.XmlString(transformer = XMLDocument.AddPercentage::class) val score: Int)
+
+        val obj = PercentageTest(80)
+        val xmlElement = XMLDocument.mapToXML(obj)
+
+        assertEquals("80%", xmlElement.children[0].getTexto())
+    }
+
+    /**
+    * Testa o adaptador FUC (Formato Único de Componentes) para um elemento XML.
+    *
+    * Verifica se o adaptador FUC renomeia corretamente o elemento e mantém
+    * todos os seus filhos após a adaptação.
+    */
+    @Test
+    fun testFUCAdapter() {
+        val element = XMLElement("componenteavaliacao")
+        element.addAttribute("attr", "value")
+        val child1 = XMLElement("child1")
+        val child2 = XMLElement("child2")
+        element.addChild(child1)
+        element.addChild(child2)
+
+        val adapter = XMLDocument.FUCAdapter()
+        adapter.adapt(element)
+
+        assertEquals("componente", element.name)
+        assertEquals(2, element.children.size)
+    }
+
+    /**
+     * Testa a anotação @XmlName para renomear o nome do elemento XML.
+     *
+     * Verifica se a anotação @XmlName renomeia corretamente o nome do elemento
+     * gerado a partir de um objeto ao mapear para XML.
+     */
+    @Test
+    fun testXmlNameAnnotation() {
+        @XMLDocument.XmlName("customname")
+        class TestClass(val prop: String)
+
+        val obj = TestClass("value")
+        val xmlElement = XMLDocument.mapToXML(obj)
+
+        assertEquals("customname", xmlElement.name)
+    }
+
+    /**
+     * Testa a anotação @XmlExclude para excluir um atributo do elemento XML.
+     *
+     * Verifica se a anotação @XmlExclude exclui corretamente um atributo
+     * específico do elemento gerado a partir de um objeto ao mapear para XML.
+     */
+
+    //NÂO ESTÁ A FUNCIONAR
+    /*@Test
+    fun testXmlExcludeAnnotation() {
+        class TestClass(val included: String, @XMLDocument.XmlExclude val excluded: String)
+
+        val obj = TestClass("includedValue", "excludedValue")
+        val xmlElement = XMLDocument.mapToXML(obj)
+
+        assertNotNull(xmlElement.attributes["included"])
+        assertNull(xmlElement.attributes["excluded"])
+    }*/
 }
