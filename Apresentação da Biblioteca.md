@@ -71,6 +71,8 @@ classDiagram
     XMLElement "1" --> "0..1" TextNode : textNode
     TextNode --> "*" TextNode : attributes
 ```
+Este diagrama de classes representa a estrutura das classes no arquivo fornecido onde cada classe é representada com seus atributos e métodos correspondentes. 
+As relações entre as classes também são indicadas, mostrando a composição entre XMLElement e TextNode, bem como a associação entre XMLDocument e XMLElement.
 
 ## Principais Funcionalidades 
 
