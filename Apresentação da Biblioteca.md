@@ -27,43 +27,49 @@ A classe TextNode é utilizada para representar o texto contido dentro de um XML
 ```mermaid
 classDiagram
     class XMLDocument {
-        XMLElement rootElement
-        String prettyPrint()
-        void writeToFile(String filename)
-    }
-    
-    class XMLElement {
-        -String name
-        -XMLElement parent
-        -MutableMap<String, String> attributes
-        -MutableList<XMLElement> children
-        -TextNode textNode
-        +XMLElement(String name, XMLElement parent)
-        +void addChild(XMLElement xmlelement)
-        +void removeChild(XMLElement child)
-        +void addAttribute(String name, String value)
-        +void removeAttribute(String name)
-        +void setTexto(String texto)
-        +String getTexto()
-        +void addTextNodeAttribute(String name, String value)
-        +String prettyPrint(String indentation)
-        +void accept(Visitor visitor)
-        +List<XMLElement> getChildrenList()
-        +void updateAttribute(String name, String value)
-    }
-    
-    class TextNode {
-        -String texto
-        -MutableMap<String, String> attributes
-        +TextNode(String texto)
-        +void addAttribute(String name, String value)
-        +void removeAttribute(String name)
-        +String prettyPrint(String indentation)
+        - rootElement: XMLElement
+        + prettyPrint(): String
+        + writeToFile(filename: String)
+        + addGlobalAttribute(attributeName: String, value: String)
+        + renameGlobalEntity(oldName: String, newName: String)
+        + renameGlobalAttribute(entityName: String, oldAttributeName: String, newAttributeName: String)
+        + removeGlobalEntity(entityName: String)
+        + removeGlobalAttribute(entityName: String, attributeName: String)
+        + queryXPath(expression: String): List<XMLElement>
     }
 
-    XMLDocument "1" *-- "1" XMLElement : contains
-    XMLElement "1" *-- "0..*" XMLElement : children
-    XMLElement "1" *-- "0..1" TextNode : contains
+    class XMLElement {
+        - name: String
+        - parent: XMLElement?
+        - attributes: Map<String, String>
+        - children: List<XMLElement>
+        - textNode: TextNode?
+        + addChild(xmlelement: XMLElement)
+        + removeChild(child: XMLElement)
+        + addAttribute(name: String, value: String)
+        + removeAttribute(name: String)
+        + updateAttribute(name: String, value: String)
+        + setTexto(texto: String)
+        + getTexto(): String?
+        + addTextNodeAttribute(name: String, value: String)
+        + prettyPrint(indentation: String = ""): String
+        + accept(visitor: Visitor)
+        + getChildrenList(): List<XMLElement>
+    }
+
+    class TextNode {
+        - texto: String
+        - attributes: Map<String, String>
+        + addAttribute(name: String, value: String)
+        + removeAttribute(name: String)
+        + prettyPrint(indentation: String = ""): String
+    }
+
+    XMLDocument --> XMLElement : rootElement
+    XMLElement "1" --> "0..*" XMLElement : children
+    XMLElement --> XMLElement : parent
+    XMLElement "1" --> "0..1" TextNode : textNode
+    TextNode --> "*" TextNode : attributes
 ```
 
 ## Principais Funcionalidades 
