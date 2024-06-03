@@ -173,6 +173,31 @@ class XMLlibDocumentTest {
     }
 
     /**
+     * Atualiza o valor de um atributo deste elemento XML.
+     *
+     * Se o atributo não existir, uma exceção `IllegalArgumentException` será lançada.
+     *
+     * @param name O nome do atributo a ser atualizado. O nome será sanitizado para remover caracteres inválidos.
+     * @param value O novo valor do atributo. O valor será sanitizado para remover caracteres inválidos.
+     * @throws IllegalArgumentException Se o atributo não existir neste elemento.
+     */
+    @Test
+    fun testUpdateAttribute() {
+        val doc = XMLDocument()
+        val root = doc.rootElement
+        root.addAttribute("version", "1.0")
+        assert(root.attributes["version"] == "1.0") { "Erro: o atributo 'version' deveria ser '1.0'" }
+        root.updateAttribute("version", "2.0")
+        assert(root.attributes["version"] == "2.0") { "Erro: o atributo 'version' deveria ser '2.0'" }
+        try {
+            root.updateAttribute("encoding", "UTF-8")
+            assert(false) { "Erro: a exceção deveria ter sido lançada para um atributo inexistente" }
+        } catch (e: IllegalArgumentException) {
+            assert(e.message == "Atributo 'encoding' não existe") { "Erro: a mensagem da exceção não está correta" }
+        }
+    }
+
+    /**
      * Testa o cenário onde setTexto é chamado com elementos filhos presentes.
      *
      * Verifica se a função setTexto lança uma exceção IllegalArgumentException

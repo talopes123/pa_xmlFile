@@ -128,6 +128,23 @@ class XMLDocument {
         }
 
         /**
+         * Atualiza o valor de um atributo deste elemento XML.
+         * @param name O nome do atributo a ser atualizado.
+         * @param value O novo valor do atributo.
+         * @throws IllegalArgumentException Se o atributo não existir neste elemento.
+         */
+        fun updateAttribute(name: String, value: String) {
+            val sanitizedKey = sanitize(name)
+            val sanitizedValue = sanitize(value)
+
+            if (attributes.containsKey(sanitizedKey)) {
+                attributes[sanitizedKey] = sanitizedValue
+            } else {
+                throw IllegalArgumentException("Atributo '$sanitizedKey' não existe")
+            }
+        }
+
+        /**
          * Define o texto associado a este elemento XML.
          * @param texto O texto a ser definido.
          * @throws IllegalArgumentException Se elementos filhos já estiverem presentes neste elemento.
