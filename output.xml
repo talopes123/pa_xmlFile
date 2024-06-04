@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+ <plano>
+  <curso> Engenharia Informatica </curso>
+  <fuc codigo="M4310">
+   <nome> Programação Avançada </nome>
+   <ects> 6.0 </ects>
+   <componente nome="Quizzes" peso="20%"/>
+   <componente nome="Projeto" peso="80%"/>
+  </fuc>
+  <fuc codigo="34568">
+   <nome> Programação Avançada </nome>
+   <ects> 6.0 </ects>
+   <componente nome="Dissertacao" peso="60%"/>
+   <componente nome="Apresentacao" peso="20%"/>
+   <componente nome="Discussao" peso="20%"/>
+  </fuc>
+ </plano>
+</root>

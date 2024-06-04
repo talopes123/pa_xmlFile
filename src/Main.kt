@@ -24,17 +24,17 @@ class ComponenteAvaliacao(
 )
 
 
+val adapter = XMLDocument.FUCAdapter(XMLDocument.AdapterConfig(
+
+    removeDuplicates = true,
+    addDefaultAttributes = null,
+    sortChildrenByName = false,
+    renameComponents = true,
+    tagRenames = mapOf("componenteavaliacao" to "componente")
+))
+
 
 fun main() {
-
-    /*val f = XMLDocument.FUC(
-        "M4310", "Programação Avançada", 6.0, "la la...",
-        listOf(
-            XMLDocument.ComponenteAvaliacao("Quizzes", 20),
-            XMLDocument.ComponenteAvaliacao("Projeto", 80)
-        )
-    )*/
-
 
     val ff = Plano(
         "Engenharia Informatica",
@@ -56,30 +56,12 @@ fun main() {
             )
         )
     )
-    /*val document = XMLDocument()
 
-    val parent = document.rootElement;
-
-    val entity = XMLDocument.XMLElement("plano")
-    val entity2 = XMLDocument.XMLElement("curso")
-    val entity3 = XMLDocument.XMLElement("fuc")
-    entity.addChild(entity2)
-    entity.addChild(entity3)
-    entity3.addAttribute("codigo","M4310")
-    val entity4 = XMLDocument.XMLElement("nome")
-    val entity5 = XMLDocument.XMLElement("ects")
-    val entity6 = XMLDocument.XMLElement("avaliacao")
-    val entity7 = XMLDocument.XMLElement("componente")
-    entity3.addChild(entity4)
-    entity3.addChild(entity5)
-    entity3.addChild(entity6)
-    entity6.addChild(entity7)
-    entity7.addAttribute( "nome", "Dissertacao")
-    entity7.addAttribute( "peso", "60%")
-
-    parent.addChild(entity)*/
-
+    val document = XMLDocument()
     val xmlElement = mapToXML(ff)
-    XMLDocument.FUCAdapter().adapt(xmlElement) // Aplica adaptações
-    println(xmlElement.prettyPrint())
+    adapter.adapt(xmlElement) // Aplica adaptações
+    //println(xmlElement.prettyPrint())
+    document.rootElement.addChild(xmlElement)
+    val ficheiro = "output.xml"
+    document.writeToFile(ficheiro)
 }

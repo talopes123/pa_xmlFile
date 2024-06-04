@@ -68,11 +68,11 @@ class XMLDocument {
          */
 
         /**
-        * Adiciona um elemento filho a este elemento XML.
-        * @param xmlelement O elemento filho a ser adicionado.
-        * @throws IllegalArgumentException Se um texto já estiver presente neste elemento.
-        * @throws IllegalArgumentException Se o elemento filho já existir na lista de elementos filhos.
-        */
+         * Adiciona um elemento filho a este elemento XML.
+         * @param xmlelement O elemento filho a ser adicionado.
+         * @throws IllegalArgumentException Se um texto já estiver presente neste elemento.
+         * @throws IllegalArgumentException Se o elemento filho já existir na lista de elementos filhos.
+         */
         fun addChild(xmlelement: XMLElement) {
             if (textNode != null) {
                 throw IllegalArgumentException("Não é possível adicionar um elemento filho quando o texto está presente.")
@@ -165,20 +165,21 @@ class XMLDocument {
         }
 
         /**
-        * Adiciona um atributo ao nó de texto associado a este elemento XML.
-        * @param name O nome do atributo a ser adicionado.
-        * @param value O valor do atributo a ser adicionado.
-        * @throws IllegalArgumentException Se não houver texto associado a este elemento XML.
-        */
+         * Adiciona um atributo ao nó de texto associado a este elemento XML.
+         * @param name O nome do atributo a ser adicionado.
+         * @param value O valor do atributo a ser adicionado.
+         * @throws IllegalArgumentException Se não houver texto associado a este elemento XML.
+         */
         fun addTextNodeAttribute(name: String, value: String) {
-            textNode?.addAttribute(name, value) ?: throw IllegalArgumentException("Texto não definido para este elemento.")
+            textNode?.addAttribute(name, value)
+                ?: throw IllegalArgumentException("Texto não definido para este elemento.")
         }
 
         /**
-        * Gera uma representação em string formatada deste elemento XML.
-        * @param indentation A string de recuo usada para formatar a saída.
-        * @return A representação em string formatada deste elemento XML.
-        */
+         * Gera uma representação em string formatada deste elemento XML.
+         * @param indentation A string de recuo usada para formatar a saída.
+         * @return A representação em string formatada deste elemento XML.
+         */
         fun prettyPrint(indentation: String = ""): String {
             val sb = StringBuilder()
             sb.append("$indentation<$name")
@@ -187,14 +188,20 @@ class XMLDocument {
             }
             if (children.isEmpty() && textNode == null) {
                 sb.append("/>")
-            } else {
+            }
+            if (children.isNotEmpty()) {
                 sb.append(">\n")
-                textNode?.let { sb.append(it.prettyPrint("$indentation  ")) }
                 for (child in children) {
-                    sb.append(child.prettyPrint("$indentation  "))
+                    sb.append(child.prettyPrint("$indentation "))
                 }
                 sb.append("$indentation</$name>")
             }
+            if (textNode != null) {
+                sb.append(">")
+                textNode?.let { sb.append(it.prettyPrint("$indentation ")) }
+                sb.append(" </$name>")
+            }
+
             sb.append("\n")
             return sb.toString()
         }
@@ -273,13 +280,13 @@ class XMLDocument {
          */
         fun prettyPrint(indentation: String = ""): String {
             val sb = StringBuilder()
-            sb.append("$indentation<text")
             for ((attr, value) in attributes) {
-                sb.append(" $attr=\"$value\"")
+                sb.append("$attr=\"$value\"")
             }
-            sb.append(">$texto</text>")
+            sb.append(" $texto")
             return sb.toString()
         }
+
     }
 
     /**
@@ -408,6 +415,7 @@ class XMLDocument {
             findElementsByName(child, name, result)
         }
     }
+
     @Target(AnnotationTarget.PROPERTY, AnnotationTarget.CLASS, AnnotationTarget.VALUE_PARAMETER)
     @Retention(AnnotationRetention.RUNTIME)
     annotation class XmlName(val value: String)
@@ -426,12 +434,8 @@ class XMLDocument {
 
     @Target(AnnotationTarget.PROPERTY, AnnotationTarget.CLASS)
     @Retention(AnnotationRetention.RUNTIME)
-    annotation class XmlAdapter(val adapter: KClass<out XMLAdapter>)
+    annotation class XmlAdapter(val adapter: KClass<out Adapter>)
 
-
-    @Target(AnnotationTarget.PROPERTY)
-    @Retention(AnnotationRetention.RUNTIME)
-    annotation class XmlElementText
 
     @Target(AnnotationTarget.CLASS)
     @Retention(AnnotationRetention.RUNTIME)
@@ -454,12 +458,12 @@ class XMLDocument {
      * Interface que define um adaptador XML.
      * Os adaptadores XML podem ser usados para aplicar modificações específicas nos elementos XML.
      */
-    interface XMLAdapter {
+    interface Adapter {
         /**
          * Método para adaptar um elemento XML.
          * @param element O elemento XML a ser adaptado.
          */
-        fun adapt(element: XMLDocument.XMLElement)
+        fun adapt(element: XMLElement)
     }
 
     /**
@@ -475,43 +479,62 @@ class XMLDocument {
         override fun transform(value: Any): String = "$value%"
     }
 
+
+/**
+ * Classe de configuração utilizada para definir as personalizações durante o processo de adaptação
+ * de elementos XML por um adaptador.
+ *
+ * Esta classe permite especificar várias opções de configuração que controlam como os elementos XML são
+ * modificados durante a adaptação. As opções incluem:
+ */
+    class AdapterConfig(
+
+        val removeDuplicates: Boolean = true,
+        val addDefaultAttributes: Map<String, String>? = null,
+        val sortChildrenByName: Boolean = false,
+        val renameComponents: Boolean = true,
+        val tagRenames: Map<String, String> = emptyMap()  // Adiciona um mapa para renomeações de tags
+    )
+
     /**
      * Classe que implementa um adaptador XML específico para elementos FUC.
      * Realiza várias modificações nos elementos FUC, como reordenação, adição de atributos, remoção de duplicados, etc.
      */
-    class FUCAdapter : XMLAdapter {
+    class FUCAdapter(private val config: AdapterConfig) : Adapter {
         /**
          * Método para adaptar um elemento FUC.
          * Aplica várias modificações no elemento FUC, como reordenação de elementos, adição de atributos, remoção de duplicados, etc.
          * @param element O elemento FUC a ser adaptado.
          */
         override fun adapt(element: XMLElement) {
-            // Reordenar elementos filhos por algum critério específico, por exemplo, por nome
-            element.children.sortBy { child -> child.name }
-
-            // Adicionar um sufixo aos valores de todos os atributos
-            element.attributes.forEach { (key, value) ->
-                element.attributes[key] = "$value%"
+            // Ordenação opcional dos elementos filhos
+            if (config.sortChildrenByName) {
+                element.children.sortBy { child -> child.name }
             }
 
-            // Injeção de um atributo padrão
-            val defaultAttributeName = "id"
-            val defaultAttributeValue = "20"
-            element.attributes[defaultAttributeName] = defaultAttributeValue
+            // Adição de atributos padrão
+            config.addDefaultAttributes?.forEach { (key, value) ->
+                element.attributes[key] = value
+            }
 
             // Remoção de duplicados
-            val uniqueChildren = element.getChildrenList().distinctBy { child -> child.name + child.attributes.values.joinToString() }
-            element.children.clear()
-            element.children.addAll(uniqueChildren)
-
-            // Modificar nomes de tags baseado em condições específicas
-            if (element.name == "componenteavaliacao") {
-                element.name = "componente"
+            if (config.removeDuplicates) {
+                val uniqueChildren =
+                    element.children.distinctBy { child -> child.name + child.attributes.values.joinToString() }
+                element.children.clear()
+                element.children.addAll(uniqueChildren)
             }
 
-            // Iterar sobre elementos filhos para aplicar a adaptação de forma recursiva
-            element.getChildrenList().forEach { child ->
-                adapt(child)  // Aplicar a adaptação nos filhos
+            // Renomeação de tags
+            if (config.renameComponents) {
+                config.tagRenames[element.name]?.let { newName ->
+                    element.name = newName
+                }
+            }
+
+            // Recursão para adaptação de elementos filhos
+            element.children.forEach { child ->
+                adapt(child)
             }
         }
     }
@@ -536,48 +559,56 @@ class XMLDocument {
          */
         fun mapToXML(obj: Any): XMLElement {
             val kClass = obj::class
-            val xmlName = kClass.findAnnotation<XmlName>()?.value ?: kClass.simpleName!!.lowercase(Locale.getDefault())
+            val xmlName = kClass.simpleName?.lowercase(Locale.getDefault())
+                ?: "unknown" // Uso de elvis operator para lidar com possíveis nulos no nome da classe
             val element = XMLElement(xmlName)
 
-            // Percorre as propriedades da classe
-            kClass.memberProperties.forEach { prop ->
-                prop.isAccessible = true  // Permite o acesso à propriedade, mesmo que seja privada
-                val value = prop.call(obj)
+            val orderAnnotation = kClass.findAnnotation<XmlElementOrder>()
+            val orderedProps = orderAnnotation?.order?.toList() ?: emptyList()
 
-                if (value != null && prop.findAnnotation<XmlExclude>() == null) {
-                    // Verifica se a propriedade não possui a anotação @XmlExclude
-                    println("Processing property: ${prop.name}, value: $value")
+            // Percorre as propriedades na ordem de declaração, verificando nulos apropriadamente
+            kClass.memberProperties
+                .sortedBy { prop -> orderedProps.indexOf(prop.name).takeIf { it != -1 } ?: Int.MAX_VALUE }
+                .forEach { prop ->
+                    prop.isAccessible = true  // Torna a propriedade acessível, mesmo se privada
+                    var value = prop.call(obj)
+
+                    if (prop.findAnnotation<XmlExclude>() != null || value == null) {
+                        return@forEach  // Ignora as propriedades marcadas com @XmlExclude ou nulas
+                    }
+
+                    if (prop.findAnnotation<XmlString>() != null) {
+                        val transformerClass = prop.findAnnotation<XmlString>()!!.transformer
+                        val transformer = transformerClass.objectInstance ?: transformerClass.createInstance()
+                        value = transformer.transform(value)
+                    }
 
                     val customName = prop.findAnnotation<XmlName>()?.value ?: prop.name
 
                     if (prop.findAnnotation<XmlAttribute>() != null) {
                         // Adiciona como atributo
-                        println("Adding property $customName as attribute with value: $value")
                         element.attributes[customName] = value.toString()
                     } else {
-                        // Adiciona como elemento filho ou texto
-                        val childElement = XMLElement(customName)
-                        if (prop.findAnnotation<XmlString>() != null) {
-                            // Verifica se a propriedade possui a anotação @XmlString
-                            val transformer = prop.findAnnotation<XmlString>()?.transformer?.createInstance()
-                            val transformedValue = transformer?.transform(value) ?: value.toString()
-                            childElement.setTexto(transformedValue)
-                            println("Adding property $customName as text element with transformed value: $transformedValue")
-                        } else {
-                            childElement.setTexto(value.toString())
-                            println("Adding property $customName as text element with value: $value")
+                        // Determina como adicionar o elemento filho ou texto
+                        when (value) {
+                            is List<*> -> value.filterNotNull().forEach { childObj ->
+                                element.children.add(mapToXML(childObj))
+                            }
+
+                            is String, is Number, is Boolean -> {
+                                val childElement = XMLElement(customName)
+                                childElement.setTexto(value.toString())
+                                element.children.add(childElement)
+                            }
+
+                            else -> element.children.add(mapToXML(value))
                         }
-                        element.children.add(childElement)
                     }
-                } else {
-                    println("Ignoring property marked with @XmlExclude: ${prop.name}")
                 }
-            }
 
             return element
         }
     }
 }
-
 
 
